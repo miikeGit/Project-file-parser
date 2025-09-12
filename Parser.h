@@ -2,7 +2,6 @@
 #include <mutex>
 #include <thread>
 #include <filesystem>
-#include <utility>
 #include <vector>
 #include <unordered_set>
 #include <chrono>
@@ -24,17 +23,19 @@ private:
   };
 
   std::unordered_set<std::filesystem::path> filetypes{{".cpp", ".h", ".c", ".hpp"}};
-  std::vector<std::thread> threads;
-  std::vector<FileInfo> fileInfos;
-  std::mutex mtx;
+  std::vector<std::thread> threads{};
+  std::vector<FileInfo> fileInfos{};
+  std::mutex mtx{};
 
-  std::chrono::steady_clock::time_point startTime;
-  std::chrono::milliseconds duration;
+  std::chrono::steady_clock::time_point startTime{};
+  std::chrono::milliseconds duration{};
 
   Parser() = default;
   void joinThreads();
   void countLines(const std::filesystem::path &path);
-  void saveSummary() const;
+  void ParseFiles(const std::filesystem::path &path);
+  void writeOutput(std::ostream& os);
+  void getSummary();
 
 public:
   Parser(Parser &other) = delete;
@@ -50,6 +51,4 @@ public:
   }
 
   void OpenFolder();
-  void ParseFiles(const std::filesystem::path &path);
-  void PrintSummary();
 };

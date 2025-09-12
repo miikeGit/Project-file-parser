@@ -1,9 +1,6 @@
 #include "Parser.h"
 #include <iostream>
-#include <string>
-#include <filesystem>
 #include <fstream>
-#include <algorithm>
 
 void Parser::OpenFolder() {
   bool status = true;
@@ -64,78 +61,66 @@ void Parser::countLines(const std::filesystem::path &path) {
   fileInfos.emplace_back(fileInfo);
 }
 
+void Parser::getSummary() {
+  writeOutput(std::cout);
+
+  std::ofstream file ("output.txt");
+  if (!file.is_open()) {
+    std::cerr << "File couldn't be opened";
+  }
+
+  writeOutput(file);
+
+  file.close();
+}
+
+
 void Parser::ParseFiles(const std::filesystem::path &path) {
   startTime = std::chrono::steady_clock::now();
+
   for (const auto &item: std::filesystem::recursive_directory_iterator(path)) {
     if (std::filesystem::is_regular_file(item.path())) {
       if (filetypes.contains(item.path().extension()))
         threads.emplace_back(&Parser::countLines, this, item.path());
     }
   }
+
+  getSummary();
 }
 
 void Parser::joinThreads() {
   for (std::thread &thread: threads) {
     thread.join();
   }
+
+  if (!threads.empty()) {
+    const auto endTime = std::chrono::steady_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+  }
+
   threads.clear();
 }
 
-void Parser::saveSummary() const {
-  std::ofstream output("output.txt");
-  if (!output.is_open()) {
-    std::cerr << "File couldn't be opened";
-  }
-
-  output << std::left  << std::setw(50) << "Name"
-            << std::right << std::setw(15) << "Total"
-                          << std::setw(15) << "Blank"
-                          << std::setw(15) << "Comments"
-                          << std::setw(15) << "Code\n";
-
-  output << std::string(110, '-') << "\n";
-
-  for (const FileInfo &file: fileInfos) {
-    output << std::left  << std::setw(50) << file.filename
-              << std::right << std::setw(15) << file.totalLines
-                            << std::setw(15) << file.blankLines
-                            << std::setw(15) << file.commentLines
-                            << std::setw(15) << file.getCodeLines() << "\n";
-  }
-
-  output << std::string(110, '-');
-  output << "\nTotal processed files - " << fileInfos.size();
-  output << "\nTime of execution - " << duration.count() << " ms";
-
-  output.close();
-}
-
-
-void Parser::PrintSummary() {
+void Parser::writeOutput(std::ostream& os) {
   joinThreads();
 
-  const auto endTime = std::chrono::steady_clock::now();
-  duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+  os << std::left  << std::setw(50) << "Name"
+     << std::right << std::setw(15) << "Total"
+                   << std::setw(15) << "Blank"
+                   << std::setw(15) << "Comments"
+                   << std::setw(15) << "Code\n";
 
-  std::cout << std::left  << std::setw(50) << "Name"
-            << std::right << std::setw(15) << "Total"
-                          << std::setw(15) << "Blank"
-                          << std::setw(15) << "Comments"
-                          << std::setw(15) << "Code\n";
-
-  std::cout << std::string(110, '-') << "\n";
+  os << std::string(110, '-') << "\n";
 
   for (const FileInfo &file: fileInfos) {
-    std::cout << std::left  << std::setw(50) << file.filename
-              << std::right << std::setw(15) << file.totalLines
-                            << std::setw(15) << file.blankLines
-                            << std::setw(15) << file.commentLines
-                            << std::setw(15) << file.getCodeLines() << "\n";
+    os << std::left  << std::setw(50) << file.filename
+       << std::right << std::setw(15) << file.totalLines
+                     << std::setw(15) << file.blankLines
+                     << std::setw(15) << file.commentLines
+                     << std::setw(15) << file.getCodeLines() << "\n";
   }
 
-  std::cout << std::string(110, '-');
-  std::cout << "\nTotal processed files - " << fileInfos.size();
-  std::cout << "\nTime of execution - " << duration.count() << " ms";
-
-  saveSummary();
+  os << std::string(110, '-');
+  os << "\nTotal processed files - " << fileInfos.size();
+  os << "\nTime of execution - " << duration.count() << " ms";
 }
