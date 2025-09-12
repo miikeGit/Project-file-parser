@@ -81,12 +81,41 @@ void Parser::joinThreads() {
   threads.clear();
 }
 
+void Parser::saveSummary() const {
+  std::ofstream output("output.txt");
+  if (!output.is_open()) {
+    std::cerr << "File couldn't be opened";
+  }
+
+  output << std::left  << std::setw(50) << "Name"
+            << std::right << std::setw(15) << "Total"
+                          << std::setw(15) << "Blank"
+                          << std::setw(15) << "Comments"
+                          << std::setw(15) << "Code\n";
+
+  output << std::string(110, '-') << "\n";
+
+  for (const FileInfo &file: fileInfos) {
+    output << std::left  << std::setw(50) << file.filename
+              << std::right << std::setw(15) << file.totalLines
+                            << std::setw(15) << file.blankLines
+                            << std::setw(15) << file.commentLines
+                            << std::setw(15) << file.getCodeLines() << "\n";
+  }
+
+  output << std::string(110, '-');
+  output << "\nTotal processed files - " << fileInfos.size();
+  output << "\nTime of execution - " << duration.count() << " ms";
+
+  output.close();
+}
+
 
 void Parser::PrintSummary() {
   joinThreads();
 
   const auto endTime = std::chrono::steady_clock::now();
-  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+  duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
 
   std::cout << std::left  << std::setw(50) << "Name"
             << std::right << std::setw(15) << "Total"
@@ -107,4 +136,6 @@ void Parser::PrintSummary() {
   std::cout << std::string(110, '-');
   std::cout << "\nTotal processed files - " << fileInfos.size();
   std::cout << "\nTime of execution - " << duration.count() << " ms";
+
+  saveSummary();
 }

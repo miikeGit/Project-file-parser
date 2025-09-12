@@ -29,10 +29,12 @@ private:
   std::mutex mtx;
 
   std::chrono::steady_clock::time_point startTime;
+  std::chrono::milliseconds duration;
 
   Parser() = default;
   void joinThreads();
   void countLines(const std::filesystem::path &path);
+  void saveSummary() const;
 
 public:
   Parser(Parser &other) = delete;
