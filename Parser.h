@@ -8,6 +8,7 @@
 
 class Parser {
 private:
+  friend class ParserTestHelper;
   struct FileInfo {
     std::filesystem::path filename;
     size_t totalLines = 0;
